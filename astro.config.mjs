@@ -9,13 +9,32 @@ import remarkToc from "remark-toc";
 import sharp from "sharp";
 import config from "./src/config/config.json";
 
-// https://astro.build/config
+// Configuration corrigée pour Cloudflare Pages
 export default defineConfig({
-  site: config.site.base_url ? config.site.base_url : "http://examplesite.com",
-  base: config.site.base_path ? config.site.base_path : "/",
+  output: 'static', // Essential pour Cloudflare
+  site: config.site.base_url || "https://examplesite.com", // Utilisation de || pour les fallbacks
+  base: config.site.base_path || "/",
   trailingSlash: config.site.trailing_slash ? "always" : "never",
-  image: { service: sharp() },
-  vite: { plugins: [tailwindcss()] },
+  
+  // Optimisation des assets
+  image: { 
+    service: sharp(),
+    domains: [] // Ajoutez vos domaines d'images si nécessaire
+  },
+  
+  // Configuration Vite corrigée
+  vite: {
+    plugins: [tailwindcss()],
+    build: {
+      assetsInlineLimit: 0, // Désactive l'inlining des assets
+      cssCodeSplit: true    // Active le split CSS
+    },
+    ssr: {
+      noExternal: ['react-icons'] // Si vous utilisez react-icons
+    }
+  },
+
+  // Intégrations
   integrations: [
     react(),
     sitemap(),
@@ -32,9 +51,20 @@ export default defineConfig({
     }),
     mdx(),
   ],
+
+  // Markdown config
   markdown: {
-    remarkPlugins: [remarkToc, [remarkCollapse, { test: "Table of contents" }]],
-    shikiConfig: { theme: "one-dark-pro", wrap: true },
-    extendDefaultPlugins: true,
-  },
+    remarkPlugins: [
+      remarkToc, 
+      [remarkCollapse, { 
+        test: "Table of contents",
+        summary: "Afficher le sommaire" 
+      }]
+    ],
+    shikiConfig: { 
+      theme: "one-dark-pro", 
+      wrap: true 
+    },
+    syntaxHighlight: 'shiki' // Explicitement défini
+  }
 });
